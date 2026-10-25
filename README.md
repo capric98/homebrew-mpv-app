@@ -1,111 +1,93 @@
 # homebrew-mpv-app
 
-个人维护的 Homebrew Tap，将 **mpv 项目提供的完整 macOS App 构建**安装到 `/Applications/mpv.app`。
+English | [简体中文](README.zh-CN.md)
 
-**本仓库与 mpv、Homebrew 官方没有隶属关系，也不代表它们。** 下载来自 [`mpv-player/mpv`](https://github.com/mpv-player/mpv/releases/latest) 的稳定版 Release，没有重新打包播放器，不依赖 Homebrew 的 `mpv` Formula。
+A personally maintained Homebrew tap that installs **the complete macOS app built by the mpv project** into `/Applications/mpv.app`.
 
-## 安装与升级
+**This repository is not affiliated with or endorsed by the mpv or Homebrew projects.** Downloads come from stable releases in [`mpv-player/mpv`](https://github.com/mpv-player/mpv/releases/latest). The app is not repackaged and does not depend on Homebrew's `mpv` formula.
 
-推送到 GitHub 后，将下面的 `YOUR_GITHUB_NAME` 替换为你的 GitHub 用户名：
-
-```bash
-brew install --cask YOUR_GITHUB_NAME/mpv-app/mpv-app
-```
-
-已经安装 `mpv-macwrapper` 的话，先关闭 mpv 并卸载旧启动器：
+## Installation and upgrades
 
 ```bash
-brew uninstall --cask IstPlayer/tap/mpv-macwrapper
+brew install --cask capric98/mpv-app/mpv-app
 ```
 
-如果 `/Applications/mpv.app` 是手动安装的，先移到别处，避免同名冲突。安装后确认 App 能播放，再按需卸载 Formula：
+If you installed `/Applications/mpv.app` manually, move it elsewhere first to avoid a file conflict. After confirming the new app plays your media, you can remove the formula if you no longer need it:
 
 ```bash
 brew uninstall --formula mpv
 ```
 
-若 Homebrew 提示其他软件仍依赖 Formula，请保留它，不要强制删除。本 Cask 不创建终端里的 `mpv` 命令；可以直接运行 App 内的程序：
+If Homebrew reports that other software still depends on the formula, keep it installed. This cask does not add an `mpv` command to your shell. You can run the executable inside the app directly:
 
 ```bash
 /Applications/mpv.app/Contents/MacOS/mpv --version
 ```
 
-以后正常升级即可：
+To upgrade:
 
 ```bash
 brew update
-brew upgrade --cask YOUR_GITHUB_NAME/mpv-app/mpv-app
+brew upgrade --cask capric98/mpv-app/mpv-app
 ```
 
-卸载：`brew uninstall --cask mpv-app`。配置目录 `~/.config/mpv/` 不会删除。
+To uninstall, run `brew uninstall --cask mpv-app`. Your configuration in `~/.config/mpv/` is preserved.
 
-当前版本为 **0.41.0**：Apple Silicon 使用 macOS 14 构建（要求 macOS 14 或更新），Intel 使用 macOS 15 构建（要求 macOS 15 或更新）。更新脚本选择每种架构支持的最低 macOS 版本，以扩大兼容范围。
+For each architecture, Apple Silicon and Intel, the updater selects the build targeting the oldest available macOS version to maximize compatibility. See the cask definition for the package version and system requirements.
 
-## 首次推送到 GitHub
+## Automatic updates with GitHub Actions
 
-本地目录已经初始化为 Git 仓库，分支为 `main`。在 GitHub 上创建一个名为 **`homebrew-mpv-app`** 的空仓库，创建时不要再初始化 README，然后执行：
+`.github/workflows/update.yml` checks for the latest stable release every day at **07:23 UTC**. You can also run it manually through **Actions → Update mpv app → Run workflow** to verify the repository permissions and environment.
 
-```bash
-cd ~/Git/homebrew-mpv-app
-git remote add origin https://github.com/YOUR_GITHUB_NAME/homebrew-mpv-app.git
-git push -u origin main
-```
+When an update is available, the workflow:
 
-没有配置远程地址、GitHub 密钥或个人访问令牌。公共仓库可供其他人直接使用；私有仓库需要 Homebrew/Git 具备相应的读取权限。
+1. Checks the release version, download origin, assets for both architectures, and GitHub's SHA-256 digests.
+2. Downloads the Apple Silicon and Intel ZIP archives, computes their SHA-256 hashes, and checks that the nested `mpv.tar.gz` contains a complete app.
+3. Runs the updater tests and checks the cask's Ruby syntax before **committing and pushing directly to the default branch** as `github-actions[bot]`.
 
-## GitHub Actions 自动维护
+If nothing has changed, it skips the downloads and creates no commit. If any verification fails, it does not commit the cask. This automation updates the cask definition; run `brew update` and `brew upgrade` on your Mac to install the new app.
 
-`.github/workflows/update.yml` 每天 **07:23 UTC** 检查一次最新稳定版，也支持在 **Actions → Update mpv app → Run workflow** 中手动运行。推送后可以手动运行一次确认权限和环境正常。
+The workflow uses GitHub's built-in `GITHUB_TOKEN` with `contents: write`. **No additional secret or personal access token is required.** Repository and organization policies must allow Actions to run and write to the repository. If branch protection blocks direct pushes from the bot, change the workflow to open an update pull request and merge it according to your branch rules.
 
-有更新时，工作流会：
+Commits pushed with `GITHUB_TOKEN` do not trigger ordinary `push` workflows, so the update workflow runs its own tests and syntax check. `validate.yml` checks your manual pushes and ordinary pull requests.
 
-1. 检查版本、下载域名、两种架构的附件和 GitHub 提供的 SHA-256。
-2. 下载 Apple Silicon 与 Intel 两个 ZIP，计算 SHA-256，并检查 ZIP 内的 `mpv.tar.gz` 包含完整 App。
-3. 运行更新器测试、检查 Cask 的 Ruby 语法，然后由 `github-actions[bot]` **直接提交并推送到默认分支**。
+Scheduled workflows run only on the default branch and may be delayed. In public repositories, GitHub may disable scheduled workflows after 60 days without repository activity; re-enable them in Actions if needed.
 
-没有变化时，不下载附件、不创建提交；任何一项验证失败，都不会提交 Cask。自动更新仅修改 Cask，不会远程更新你的 Mac；Mac 上仍需运行 `brew update` / `brew upgrade`。
+## Maintenance
 
-工作流使用 GitHub 自动提供的 `GITHUB_TOKEN`，请求 `contents: write`，**不需要额外 Secret 或 PAT**。仓库/组织策略需要允许 Actions 运行并写入仓库。如果默认分支禁止机器人直接推送，自动更新会失败；这种情况下应把流程改为创建更新 PR，再按你的分支规则合并。
+Under normal conditions, Actions maintains the version, download URLs, SHA-256 hashes, and minimum macOS requirements. Watch for failed workflow notifications.
 
-使用 `GITHUB_TOKEN` 推送的提交不会再触发普通 `push` 工作流，因此更新工作流本身已经运行测试和语法检查。`validate.yml` 则检查你手动推送的更改和普通 PR。
+Manual changes may be needed when:
 
-GitHub 定时任务只在默认分支上运行，执行时间可能延迟；公开仓库连续 60 天无活动时，定时任务可能被自动禁用，需要在 Actions 中重新启用。
+- mpv changes asset names or archive layouts, or stops publishing an architecture.
+- A new macOS version is not yet included in the updater's `MACOS_NAMES` mapping.
+- An existing release's asset checksum changes. The updater refuses silent replacement; investigate why upstream re-uploaded the asset before proceeding.
+- Branch protection blocks automated commits, or scheduled workflows have been disabled.
 
-## 平时需要维护什么
+This tap follows stable releases, not the rolling `git-release` development builds. Versions and checksums are pinned; it does not use `version :latest` or `sha256 :no_check`.
 
-正常情况下，Actions 会维护版本号、URL、SHA-256 和最低系统要求，你只需要留意 Actions 失败通知。
-
-这些变化需要人工处理：
-
-- mpv 改了附件命名、压缩包结构或不再提供某种架构。
-- 新的 macOS 版本尚未加入脚本的 `MACOS_NAMES` 映射。
-- 同一版本的附件校验值发生变化：脚本会拒绝静默替换，应先查明上游为什么重传。
-- 默认分支的保护规则阻止自动提交，或定时任务被禁用。
-
-只跟随正式稳定版；不会跟随每日变化的 `git-release` 开发构建。固定版本和校验值，不使用 `version :latest` 或 `sha256 :no_check`。
-
-本地检查和更新：
+To check or update locally:
 
 ```bash
 cd ~/Git/homebrew-mpv-app
 python3 -m unittest discover -s tests -v
-python3 scripts/update.py --check  # 0=已是最新；1=可更新；2=检查失败
-python3 scripts/update.py         # 有变化时下载校验，然后更新 Cask
+python3 scripts/update.py --check  # 0=current; 1=update available; 2=check failed
+python3 scripts/update.py         # Download, verify, and update the cask if needed
 git diff -- Casks/mpv-app.rb
 ```
 
-本地脚本使用 Python 3.9 或更新版的标准库，无需安装 pip 依赖。若 GitHub API 达到未认证请求频率限制，可以通过环境变量 `GITHUB_TOKEN` 提供令牌；不要把令牌写入仓库。下载包本身不会收到这个 API 令牌。
+The updater requires Python 3.9 or later and uses only the standard library. No pip dependencies are needed. If you reach GitHub's unauthenticated API rate limit, supply a token through the `GITHUB_TOKEN` environment variable. Do not commit tokens to the repository. The API token is not sent with asset download requests.
 
-GitHub Actions 的 checkout 固定到 commit SHA；Dependabot 每月检查 Actions 的版本更新。
+The checkout action is pinned to a commit SHA. Dependabot checks for GitHub Actions updates monthly.
 
 ## Gatekeeper
 
-App 来自 mpv 项目，不代表它一定经过 Apple 开发者签名/公证。这个 Cask 保留默认安全检查，不自动执行 `xattr` 或关闭 Gatekeeper。若首次启动被拦截，请先核实来源并查看“系统设置 → 隐私与安全性”中的提示。下载校验值只能确认字节与发布附件一致，不等于 Apple 公证。
+A build published by the mpv project is not necessarily signed or notarized by Apple. This cask keeps the default security checks enabled and does not automatically run `xattr` or disable Gatekeeper. If macOS blocks the first launch, verify the download source and check **System Settings → Privacy & Security**. Matching a download checksum confirms that its bytes match the release asset; it is not Apple notarization.
 
-## 参考
+## References
 
-- [mpv 安装说明](https://mpv.io/installation/)
-- [mpv 最新稳定版](https://github.com/mpv-player/mpv/releases/latest)
+- [mpv installation](https://mpv.io/installation/)
+- [Latest stable mpv release](https://github.com/mpv-player/mpv/releases/latest)
 - [Homebrew Cask Cookbook](https://docs.brew.sh/Cask-Cookbook)
-- [GitHub Actions 的 schedule 事件](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)
-- [使用 GITHUB_TOKEN 触发工作流的限制](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow#triggering-a-workflow-from-a-workflow)
+- [GitHub Actions schedule event](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)
+- [Triggering workflows with GITHUB_TOKEN](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow#triggering-a-workflow-from-a-workflow)
