@@ -1,14 +1,14 @@
 cask "mpv-app" do
-  version "0.41.0"
+  version "0.42.0"
 
   on_arm do
-    sha256 "5c96f9b21355fc0a11d2e2161ad65f33031070e9fb3f6bd9865fb459b94587e6"
-    url "https://github.com/mpv-player/mpv/releases/download/v#{version}/mpv-v#{version}-macos-14-arm.zip"
-    depends_on macos: :sonoma
+    sha256 "be1b8d2445e6880860869c080b8710dee189721f1fa4689840db6a2c10d7be69"
+    url "https://github.com/mpv-player/mpv/releases/download/v#{version}/mpv-v#{version}-macos-15-arm.zip"
+    depends_on macos: :sequoia
   end
 
   on_intel do
-    sha256 "41003617ab4f7784394b5ddea7ce51b3e0838e8cfc8166ad1a378b2eda3b583c"
+    sha256 "2d2f34350ff844b6014c35f21ca142937275e19c0c673150a8564fcd2f3bfa14"
     url "https://github.com/mpv-player/mpv/releases/download/v#{version}/mpv-v#{version}-macos-15-intel.zip"
     depends_on macos: :sequoia
   end
